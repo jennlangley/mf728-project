@@ -47,13 +47,14 @@ def get_firm_fundamentals(tickers, output_path):
 
 def main():
     cds = pd.read_csv('./data/cds.csv')
-    tickers = ['JPM','XOM', 'GM', 'T', 'PFE', 'IBM', 'GS', 'AAPL', 'MSFT', 'GOOG', 'AMZN', 'TSLA']
+    tickers = ['JPM','BAC', 'GS', 'IBM', 'F', 'XOM', 'GM', 'T']
     # 'F' bank of america, citi group, RTX
-    data = download_data(tickers, start_date='2020-01-01', end_date='2024-12-31')
+    data = download_data(tickers, start_date='2019-01-01', end_date='2024-12-31')
     risk_free_data = load_risk_free_rate('./data/ff_factors_daily.csv')
     merged_data = merge_data_with_rf(data, risk_free_data)
     excess_returns = calculate_excess_returns(merged_data).dropna()
     excess_returns.to_csv('./data/excess_returns.csv')
+    print(excess_returns.head())
     print("Excess returns calculated and saved to ./data/excess_returns.csv")
     print(data.head())
 

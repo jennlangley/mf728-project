@@ -15,8 +15,8 @@ from data.main import (
 # ------------------------
 # Constants
 # ------------------------
-TICKERS = ['JPM','XOM', 'GM', 'T', 'PFE', 'IBM', 'GS', 'AAPL', 'MSFT', 'GOOG', 'AMZN', 'TSLA']
-START_DATE = "2020-01-01"
+TICKERS = ['JPM','BAC', 'GS', 'IBM', 'F', 'XOM', 'GM', 'T']
+START_DATE = "2019-01-01"
 END_DATE = "2024-12-31"
 THRESHOLD = 0.005  # ~50bps in decimal form
 T = 1  # 1 year time horizon
@@ -87,7 +87,7 @@ fundamentals_df = get_firm_fundamentals(TICKERS, FIRM_FUNDAMENTALS_PATH)
 debt_dict = fundamentals_df["Debt"].to_dict()
 market_cap_dict = fundamentals_df["MarketCap"].to_dict()
 
-cds_df = pd.read_csv(CDS_CSV_PATH, parse_dates=["Date"])
+cds_df = pd.read_csv(CDS_CSV_PATH, parse_dates=["Date"]).dropna()
 
 strategy_log = []
 
@@ -106,13 +106,13 @@ for ticker in TICKERS:
             continue
 
         merton = merton_model(E, sigma_E, D, r, T)
-        sub_df = cds_df[cds_df["Ticker"] == ticker].set_index("Date")
-        sub_df = sub_df.loc[:date]
+        sub_df = cds_df[['Date', ticker]]
+
         if sub_df.empty:
             print(f"No CDS data for {ticker} before {date}")
             continue
 
-        market_spread = sub_df.iloc[-1]["Spread"] / 10000  # Convert from bps to decimal
+        market_spread = sub_df.iloc[-1] / 10000  # Convert from bps to decimal
         signal = detect_mispricing(merton["Model-Implied Spread"], market_spread, THRESHOLD)
 
         strategy_log.append({
@@ -132,8 +132,8 @@ signal_df = pd.DataFrame(strategy_log)
 signal_df.to_csv("./data/signals.csv", index=False)
 
 for ticker in TICKERS:
-    cds_prices = cds_df[cds_df["Ticker"] == ticker].set_index("Date")["Spread"]
-    signals = signal_df[signal_df["Ticker"] == ticker].set_index("Date")
+    cds_prices = cds_df[['Date', ticker]]
+    signals = signal_df[['Date', ticker]]
 
     if len(signals) < 2:
         print(f"Not enough signals to backtest for {ticker}")
