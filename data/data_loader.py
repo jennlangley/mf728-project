@@ -7,7 +7,7 @@ import os
 
 def download_data(tickers, start_date, end_date, cache_path='./data/asset_data.csv'):
     if os.path.exists(cache_path):
-        print(f"Loading cached data from {cache_path}")
+        print(f"Loading asset data from {cache_path}")
         data = pd.read_csv(cache_path, parse_dates=['Date'], index_col='Date')
         data.index = data.index.tz_localize(None)
         return data
