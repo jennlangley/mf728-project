@@ -4,7 +4,7 @@ import yfinance as yf
 from scipy.stats import norm
 import matplotlib.pyplot as plt
 
-from data.main import (
+from data.data_loader import (
     download_data,
     load_risk_free_rate,
     merge_data_with_rf,
@@ -87,8 +87,9 @@ fundamentals_df = get_firm_fundamentals(TICKERS, FIRM_FUNDAMENTALS_PATH)
 debt_dict = fundamentals_df["Debt"].to_dict()
 market_cap_dict = fundamentals_df["MarketCap"].to_dict()
 
-cds_df = pd.read_csv(CDS_CSV_PATH, parse_dates=["Date"]).dropna()
-
+# Ensure CDS data is in the correct format
+cds_df = pd.read_csv(CDS_CSV_PATH, parse_dates=['Date'], index_col='Date')
+cds_df.index = cds_df.index.tz_localize(None)
 strategy_log = []
 
 for ticker in TICKERS:
@@ -96,7 +97,7 @@ for ticker in TICKERS:
     try:
         returns = excess_returns[ticker].dropna()
         sigma_E = returns.std() * np.sqrt(252)
-        date = returns.index[-1]
+        date = returns.index[-1] # Use the last date in the returns data
         r = risk_free_data.loc[:date].iloc[-1]
 
         E = market_cap_dict.get(ticker, None)
@@ -106,7 +107,7 @@ for ticker in TICKERS:
             continue
 
         merton = merton_model(E, sigma_E, D, r, T)
-        sub_df = cds_df[['Date', ticker]]
+        sub_df = cds_df.loc[:date].iloc[-1]
 
         if sub_df.empty:
             print(f"No CDS data for {ticker} before {date}")
@@ -132,8 +133,9 @@ signal_df = pd.DataFrame(strategy_log)
 signal_df.to_csv("./data/signals.csv", index=False)
 
 for ticker in TICKERS:
-    cds_prices = cds_df[['Date', ticker]]
-    signals = signal_df[['Date', ticker]]
+    date = returns.index[-1]
+    cds_prices = cds_df[ticker].loc[:date].iloc[-1]
+    signals = signal_df[signal_df["Ticker"] == ticker][["Date", "Signal"]]
 
     if len(signals) < 2:
         print(f"Not enough signals to backtest for {ticker}")
