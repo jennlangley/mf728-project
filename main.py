@@ -469,6 +469,9 @@ def main():
         "Hit Rate": len(equal_weighted_returns[equal_weighted_returns > 0]) / len(equal_weighted_returns.dropna())
     }
 
+    print(f"Equal-Weighted Portfolio - CAGR: {portfolio_metrics['CAGR']:.2%}, Max DD: {portfolio_metrics['Max Drawdown']:.2%}, VaR(95%): {portfolio_metrics['VaR (95%)']:.2%}, Sharpe: {portfolio_metrics['Sharpe Ratio']:.2f}")
+
+
     plt.figure(figsize=(12, 8))
     plt.plot(equal_weighted_cumulative, label="Strategy Portfolio", linewidth=2)
     plt.plot(buy_hold_cumulative, label="Buy & Hold Portfolio", linestyle='--')
