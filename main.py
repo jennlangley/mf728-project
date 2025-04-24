@@ -369,6 +369,8 @@ def main():
     signal_df = pd.DataFrame(strategy_log)
     signal_df.to_csv("./data/enhanced_signals.csv", index=False)
 
+
+    portfolio_returns = {}
     # Performance analysis
     print("\n--- Performance Analysis ---")
     for ticker in TICKERS:
@@ -384,6 +386,7 @@ def main():
         equity_series = equity_series.reindex(ticker_signals.index)
         positions = generate_position_series(ticker_signals, "Equity Signal")
         cumulative, strat_returns = backtest_equity_strategy(equity_series, positions)
+        portfolio_returns[ticker] = strat_returns
 
         # Calculate statistics
         if not cumulative.empty and not strat_returns.empty:
@@ -394,17 +397,34 @@ def main():
             # Sharpe ratio
             avg_rf = risk_free_data.loc[strat_returns.index].mean()
             sharpe = calculate_sharpe_ratio(strat_returns, avg_rf)
+
+            # Additional metrics
+            volatility = strat_returns.std() * np.sqrt(252)
+            hit_rate = len(strat_returns[strat_returns > 0]) / len(strat_returns.dropna())
+
             print(f"{ticker} - CAGR: {cagr:.2%}, Max DD: {max_dd:.2%}, VaR(95%): {var_95:.2%}, Sharpe: {sharpe:.2f}")
 
             # Buy-and-hold
             bh_returns = (equity_series / equity_series.iloc[0])
-            plt.plot(bh_returns, label=f"{ticker} Buy & Hold", linestyle='--')
-            plt.plot(cumulative, label=f"{ticker} Strategy")
+            plt.plot(bh_returns, label=f"{ticker} Buy & Hold", linestyle='--', color='green')
+            plt.plot(cumulative, label=f"{ticker} Strategy", color='blue')
 
             # Risk-free benchmark
             rf_subset = risk_free_data.loc[ticker_signals.index]
             rf_cumulative = (1 + rf_subset).cumprod()
-            plt.plot(rf_cumulative, label="Risk-Free Benchmark", linestyle=':')
+            plt.plot(rf_cumulative, label="Risk-Free Benchmark", linestyle=':', color='orange')
+
+            # Metrics box
+            metrics_text = "\n".join([
+                f"CAGR: {cagr:.2%}",
+                f"Volatility: {volatility:.2%}",
+                f"Sharpe: {sharpe:.2f}",
+                f"Max DD: {max_dd:.2%}",
+                f"VaR (95%): {var_95:.2%}",
+                f"Hit Rate: {hit_rate:.2%}"
+            ])
+            plt.annotate(metrics_text, xy=(0.02, 0.5), xycoords='axes fraction',
+                        bbox=dict(boxstyle="round,pad=0.5", fc="white", alpha=0.8))
 
             plt.title(f"{ticker} CDS-Based Equity Trading Strategy")
             plt.xlabel("Date")
@@ -414,6 +434,65 @@ def main():
             plt.tight_layout()
             plt.savefig(f"./data/figures/{ticker}_strategy_performance.png")
             plt.close()
+
+    # -----------------------------
+    # Equal-weighted portfolio analysis
+    # -----------------------------
+    print("\n--- Equal-Weighted Portfolio Analysis ---")
+
+    # Strategy portfolio
+    portfolio_df = pd.DataFrame(portfolio_returns).fillna(0)
+    equal_weighted_returns = portfolio_df.mean(axis=1)
+    equal_weighted_cumulative = (1 + equal_weighted_returns).cumprod()
+
+    # Buy-and-hold portfolio
+    buy_hold_prices = pd.DataFrame({
+        ticker: data[ticker].loc[portfolio_df.index.min():portfolio_df.index.max()]
+        for ticker in TICKERS if ticker in data
+    }).reindex(portfolio_df.index)
+
+    buy_hold_returns = buy_hold_prices.pct_change()
+    buy_hold_equal_weighted = buy_hold_returns.mean(axis=1)
+    buy_hold_cumulative = (1 + buy_hold_equal_weighted).cumprod()
+
+    # Risk-free benchmark
+    rf_portfolio = risk_free_data.loc[portfolio_df.index]
+    rf_cumulative_portfolio = (1 + rf_portfolio).cumprod()
+
+    # Performance Metrics
+    portfolio_metrics = {
+        "CAGR": calculate_cagr(equal_weighted_cumulative),
+        "Annualized Volatility": equal_weighted_returns.std() * np.sqrt(252),
+        "Sharpe Ratio": calculate_sharpe_ratio(equal_weighted_returns, rf_portfolio.mean()),
+        "Max Drawdown": calculate_max_drawdown(equal_weighted_cumulative),
+        "VaR (95%)": calculate_var(equal_weighted_returns),
+        "Hit Rate": len(equal_weighted_returns[equal_weighted_returns > 0]) / len(equal_weighted_returns.dropna())
+    }
+
+    plt.figure(figsize=(12, 8))
+    plt.plot(equal_weighted_cumulative, label="Strategy Portfolio", linewidth=2)
+    plt.plot(buy_hold_cumulative, label="Buy & Hold Portfolio", linestyle='--')
+    plt.plot(rf_cumulative_portfolio, label="Risk-Free", linestyle=':')
+
+    # Metrics box
+    metrics_text = "\n".join([
+        f"CAGR: {portfolio_metrics['CAGR']:.2%}",
+        f"Volatility: {portfolio_metrics['Annualized Volatility']:.2%}",
+        f"Sharpe: {portfolio_metrics['Sharpe Ratio']:.2f}",
+        f"Max DD: {portfolio_metrics['Max Drawdown']:.2%}",
+        f"VaR (95%): {portfolio_metrics['VaR (95%)']:.2%}",
+        f"Hit Rate: {portfolio_metrics['Hit Rate']:.2%}"
+    ])
+    plt.annotate(metrics_text, xy=(0.02, 0.5), xycoords='axes fraction',
+                bbox=dict(boxstyle="round,pad=0.5", fc="white", alpha=0.8))
+
+    plt.title("Equal-Weighted CDS Strategy vs Buy & Hold vs Risk-Free")
+    plt.ylabel("Cumulative Return")
+    plt.xlabel("Date")
+    plt.grid(True, alpha=0.3)
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig("./data/figures/portfolio_equal_weighted_performance.png")
 
 if __name__ == "__main__":
     main()
