@@ -162,7 +162,6 @@ def get_firm_fundamentals(tickers, output_path):
 def main():
     cds = pd.read_csv('./data/cds.csv')
     tickers = ['JPM','BAC', 'GS', 'IBM', 'F', 'XOM', 'GM', 'T']
-    # 'F' bank of america, citi group, RTX
     data = download_data(tickers, start_date='2019-01-01', end_date='2024-12-31')
     risk_free_data = load_risk_free_rate('./data/ff_factors_daily.csv')
     merged_data = merge_data_with_rf(data, risk_free_data)

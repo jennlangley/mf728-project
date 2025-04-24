@@ -9,3 +9,5 @@ venv/
 
 # MacOS
 .DS_Store
+test.py
+initial_code.py
