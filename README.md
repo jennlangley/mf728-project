@@ -5,7 +5,7 @@ This project implements a cross-asset equity trading strategy informed by credit
 
 ---
 
-## 🔍 Overview
+## Overview
 
 - **Goal:** Exploit mispricing between equity and CDS markets to generate alpha
 - **Framework:** Merton model + firm fundamentals + volatility adjustment
@@ -37,25 +37,8 @@ It also builds on empirical insights from:
 - Calculates model-implied CDS spreads using an enhanced Merton model
 - Detects mispricing between model and market CDS spreads
 - Converts mispricing into long/short equity signals
-- Runs backtests with realistic assumptions (e.g., 1-day signal lag, transaction costs)
+- Runs backtests with realistic assumptions
 - Plots performance against buy-and-hold and risk-free benchmarks
-
----
-
-## 📊 Strategy Performance
-
-| Ticker | CAGR   | Sharpe | Max Drawdown |
-|--------|--------|--------|---------------|
-| F      | 5.45%  | 0.33   | -45.18%       |
-| XOM    | 10.61% | 0.56   | -50.13%       |
-| JPM    | 0.00%  | 0.01   | -39.50%       |
-| BAC    | -3.44% | -0.12  | -60.74%       |
-| ...    | ...    | ...    | ...           |
-
-📈 Equal-weighted portfolio:
-- **CAGR:** 2.51%
-- **Sharpe:** 0.16
-- **Max DD:** -29.45%
 
 ---
 
@@ -67,7 +50,7 @@ It also builds on empirical insights from:
 
 Additional filters:
 - Volatility-scaled threshold
-- Optional: Z-score filter and CDS momentum confirmation
+- Z-score filter and CDS momentum confirmation
 
 ---
 
@@ -78,8 +61,6 @@ git clone https://github.com/jennlangley/mf728-project
 cd mf728-project
 pip install -r requirements.txt
 ```
-
-*(Ensure you have access to the `data/cds.csv` and `ff_factors_daily.csv` files.)*
 
 ---
 
