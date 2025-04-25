@@ -4,7 +4,7 @@ import yfinance as yf
 from scipy.stats import norm
 import matplotlib.pyplot as plt
 
-from data.data_loader import (
+from data_loader import (
     download_data,
     load_risk_free_rate,
     merge_data_with_rf,
@@ -34,9 +34,9 @@ FIRM_FUNDAMENTALS_PATH = "./data/firm_fundamentals.csv"
 EXCESS_RETURNS_PATH = "./data/excess_returns.csv"
 
 # ------------------------
-# Enhanced Credit Risk Modeling
+# Credit Risk Modeling
 # ------------------------
-def enhanced_merton_model(E, sigma_E, D, r, T, liquidity_factor=1.0):
+def merton_model(E, sigma_E, D, r, T, liquidity_factor=1.0):
     """
     Enhanced Merton model that incorporates liquidity factors
     and provides more robust estimates of default probabilities
@@ -304,7 +304,7 @@ def main():
                 r = r_slice.iloc[-1]
 
                 # Enhanced Merton model with liquidity adjustment
-                merton = enhanced_merton_model(E, sigma_E, D, r, T, liquidity_factor)
+                merton = merton_model(E, sigma_E, D, r, T, liquidity_factor)
 
                 try:
                     market_spread = cds_df.loc[date, ticker] / 10000
@@ -367,7 +367,7 @@ def main():
 
     # Convert to DataFrame and save signals
     signal_df = pd.DataFrame(strategy_log)
-    signal_df.to_csv("./data/enhanced_signals.csv", index=False)
+    signal_df.to_csv("./results/signals.csv", index=False)
 
 
     portfolio_returns = {}
@@ -432,7 +432,7 @@ def main():
             plt.legend()
             plt.grid(True)
             plt.tight_layout()
-            plt.savefig(f"./data/figures/{ticker}_strategy_performance.png")
+            plt.savefig(f"./figures/{ticker}_strategy_performance.png")
             plt.close()
 
     # -----------------------------
@@ -495,7 +495,7 @@ def main():
     plt.grid(True, alpha=0.3)
     plt.legend()
     plt.tight_layout()
-    plt.savefig("./data/figures/portfolio_equal_weighted_performance.png")
+    plt.savefig("./figures/portfolio_equal_weighted_performance.png")
 
 if __name__ == "__main__":
     main()
